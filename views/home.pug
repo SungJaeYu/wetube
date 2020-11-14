@@ -1,1 +1,7 @@
-p Hello!
+extends layouts/main
+
+block content
+    .videos
+        each item in videos
+            h1 = item.title
+            p = item.description
