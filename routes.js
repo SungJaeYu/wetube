@@ -36,8 +36,8 @@ const routes = {
     },
     editProfile: EDIT_PROFILE,
     changePassword: CHANGE_PASSWORD,
-    upload: UPLOAD,
     videos: VIDEOS,
+    upload: UPLOAD,
     videoDetail: (id) => {
         if(id){
             return `/videos/${id}`
