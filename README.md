@@ -2,14 +2,14 @@
 
 Cloning Youtube
 
-- [o] Home
-- [o] Join
-- [x] Login
-- [x] Search
-- [x] UserDetail
-- [o] Edit Profile
-- [x] Change Password
-- [o] Upload
-- [o] Video Detail
-- [o] Edit Video
-- [o] Delete Video
+- [x] Home
+- [x] Join
+- [ ] Login
+- [ ] Search
+- [ ] UserDetail
+- [x] Edit Profile
+- [ ] Change Password
+- [x] Upload
+- [x] Video Detail
+- [x] Edit Video
+- [x] Delete Video
