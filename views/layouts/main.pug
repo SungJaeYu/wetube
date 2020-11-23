@@ -1,14 +1,12 @@
-require("@fortawesome/fontawesome-free")
-
-FontAwesome.config.autoAddCss = false
 
 doctype html
 html
     head
-        script(src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js", integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV", crossorigin="anonymous")
         title | #{siteName}
+        link(rel="stylesheet", href="/static/styles.css")
     body
         include ../partials/header
         main
             block content
         include ../partials/footer
+        script(src="/static/main.js")
