@@ -10,7 +10,9 @@ passport.use(User.createStartegy());
 passport.use(new GithubStrategy({
     clientID: process.env.GITHUB_ID,
     clientSecret: process.env.GITHUB_SECRET,
-    callbackURL: `http://localhost:4000${routes.githubCallback}`
+    callbackURL: `http://localhost:4000${routes.githubCallback}`,
+    profileFields: ["id", "displayName", "photos","email"],
+    scope: ["public_profile", "email"]
     },
     githubLoginCallback)
 );
