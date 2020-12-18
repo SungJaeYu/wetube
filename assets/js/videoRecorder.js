@@ -25,6 +25,7 @@ const startRecording = () => {
   videoRecorder = new MediaRecorder(streamObject);
   videoRecorder.start();
   videoRecorder.addEventListener("dataavailable", handleVideoData);
+  recordBtn.addEventListener("click", stopRecording);
 };
 
 const getVideo = async () => {
