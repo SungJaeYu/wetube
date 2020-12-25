@@ -1,5 +1,6 @@
 node_modules
+.fusebox/
 package-lock.json
 .env
-uploads
 static
+build
