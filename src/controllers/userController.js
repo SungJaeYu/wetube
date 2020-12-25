@@ -1,161 +1,178 @@
+import passport from "passport";
 import routes from "../routes";
-import Video from "../models/Video";
-import Comment from "../models/Comment";
+import User from "../models/User";
 
-// Home
+export const getJoin = (req, res) => {
+  res.render("join", { pageTitle: "Join" });
+};
 
-export const home = async (req, res) => {
-  try {
-    const videos = await Video.find({}).sort({ _id: -1 });
-    res.render("home", { pageTitle: "Home", videos });
-  } catch (error) {
-    console.log(error);
-    res.render("home", { pageTitle: "Home", videos: [] });
+export const postJoin = async (req, res, next) => {
+  const {
+    body: { name, email, password, password2 }
+  } = req;
+  if (password !== password2) {
+    req.flash("error", "Passwords don't match");
+    res.status(400);
+    res.render("join", { pageTitle: "Join" });
+  } else {
+    try {
+      const user = await User({
+        name,
+        email
+      });
+      await User.register(user, password);
+      next();
+    } catch (error) {
+      console.log(error);
+      res.redirect(routes.home);
+    }
   }
 };
 
-// Search
+export const getLogin = (req, res) =>
+  res.render("login", { pageTitle: "Log In" });
 
-export const search = async (req, res) => {
+export const postLogin = passport.authenticate("local", {
+  failureRedirect: routes.login,
+  successRedirect: routes.home,
+  successFlash: "Welcome",
+  failureFlash: "Can't log in. Check email and/or password"
+});
+
+export const githubLogin = passport.authenticate("github", {
+  successFlash: "Welcome",
+  failureFlash: "Can't log in at this time"
+});
+
+export const githubLoginCallback = async (_, __, profile, cb) => {
   const {
-    query: { term: searchingBy }
-  } = req;
-  let videos = [];
+    _json: { id, avatar_url: avatarUrl, name, email }
+  } = profile;
   try {
-    videos = await Video.find({
-      title: { $regex: searchingBy, $options: "i" }
+    const user = await User.findOne({ email });
+    if (user) {
+      user.githubId = id;
+      user.save();
+      return cb(null, user);
+    }
+    const newUser = await User.create({
+      email,
+      name,
+      githubId: id,
+      avatarUrl
     });
+    return cb(null, newUser);
   } catch (error) {
-    console.log(error);
-  }
-  res.render("search", { pageTitle: "Search", searchingBy, videos });
-};
-
-// Upload
-
-export const getUpload = (req, res) =>
-  res.render("upload", { pageTitle: "Upload" });
-
-export const postUpload = async (req, res) => {
-  const {
-    body: { title, description },
-    file: { location }
-  } = req;
-  const newVideo = await Video.create({
-    fileUrl: location,
-    title,
-    description,
-    creator: req.user.id
-  });
-  req.user.videos.push(newVideo.id);
-  req.user.save();
-  res.redirect(routes.videoDetail(newVideo.id));
-};
-
-// Video Detail
-
-export const videoDetail = async (req, res) => {
-  const {
-    params: { id }
-  } = req;
-  try {
-    const video = await Video.findById(id)
-      .populate("creator")
-      .populate("comments");
-    res.render("videoDetail", { pageTitle: video.title, video });
-  } catch (error) {
-    res.redirect(routes.home);
+    return cb(error);
   }
 };
 
-// Edit Video
-
-export const getEditVideo = async (req, res) => {
-  const {
-    params: { id }
-  } = req;
-  try {
-    const video = await Video.findById(id);
-    if (String(video.creator) !== req.user.id) {
-      throw Error();
-    } else {
-      res.render("editVideo", { pageTitle: `Edit ${video.title}`, video });
-    }
-  } catch (error) {
-    res.redirect(routes.home);
-  }
-};
-
-export const postEditVideo = async (req, res) => {
-  const {
-    params: { id },
-    body: { title, description }
-  } = req;
-  try {
-    await Video.findOneAndUpdate({ _id: id }, { title, description });
-    res.redirect(routes.videoDetail(id));
-  } catch (error) {
-    res.redirect(routes.home);
-  }
-};
-
-// Delete Video
-
-export const deleteVideo = async (req, res) => {
-  const {
-    params: { id }
-  } = req;
-  try {
-    const video = await Video.findById(id);
-    if (String(video.creator) !== req.user.id) {
-      throw Error();
-    } else {
-      await Video.findOneAndRemove({ _id: id });
-    }
-  } catch (error) {
-    console.log(error);
-  }
+export const postGithubLogIn = (req, res) => {
   res.redirect(routes.home);
 };
 
-// Register Video View
+export const facebookLogin = passport.authenticate("facebook", {
+  successFlash: "Welcome",
+  failureFlash: "Can't log in at this time"
+});
 
-export const postRegisterView = async (req, res) => {
+export const facebookLoginCallback = async (_, __, profile, cb) => {
+  const {
+    _json: { id, name, email }
+  } = profile;
+  try {
+    const user = await User.findOne({ email });
+    if (user) {
+      user.facebookId = id;
+      user.avatarUrl = `https://graph.facebook.com/${id}/picture?type=large`;
+      user.save();
+      return cb(null, user);
+    }
+    const newUser = await User.create({
+      email,
+      name,
+      facebookId: id,
+      avatarUrl: `https://graph.facebook.com/${id}/picture?type=large`
+    });
+    return cb(null, newUser);
+  } catch (error) {
+    return cb(error);
+  }
+};
+
+export const postFacebookLogin = (req, res) => {
+  res.redirect(routes.home);
+};
+
+export const logout = (req, res) => {
+  req.flash("info", "Logged out, see you later");
+  req.logout();
+  res.redirect(routes.home);
+};
+
+export const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).populate("videos");
+    res.render("userDetail", { pageTitle: "User Detail", user });
+  } catch (error) {
+    res.redirect(routes.home);
+  }
+};
+
+export const userDetail = async (req, res) => {
   const {
     params: { id }
   } = req;
   try {
-    const video = await Video.findById(id);
-    video.views += 1;
-    video.save();
-    res.status(200);
+    const user = await User.findById(id).populate("videos");
+    res.render("userDetail", { pageTitle: "User Detail", user });
   } catch (error) {
-    res.status(400);
-  } finally {
-    res.end();
+    req.flash("error", "User not found");
+    res.redirect(routes.home);
   }
 };
 
-// Add Comment
+export const getEditProfile = (req, res) =>
+  res.render("editProfile", { pageTitle: "Edit Profile" });
 
-export const postAddComment = async (req, res) => {
+export const postEditProfile = async (req, res) => {
   const {
-    params: { id },
-    body: { comment },
-    user
+    body: { name, email },
+    file
   } = req;
   try {
-    const video = await Video.findById(id);
-    const newComment = await Comment.create({
-      text: comment,
-      creator: user.id
+    await User.findByIdAndUpdate(req.user.id, {
+      name,
+      email,
+      avatarUrl: file ? file.location : req.user.avatarUrl
     });
-    video.comments.push(newComment.id);
-    video.save();
+    req.flash("success", "Profile updated");
+    res.redirect(routes.me);
   } catch (error) {
-    console.log(error);
+    req.flash("error", "Can't update profile");
+    res.redirect(routes.editProfile);
+  }
+};
+
+export const getChangePassword = (req, res) =>
+  res.render("changePassword", { pageTitle: "Change Password" });
+
+export const postChangePassword = async (req, res) => {
+  const {
+    body: { oldPassword, newPassword, newPassword1 }
+  } = req;
+  try {
+    if (newPassword !== newPassword1) {
+      req.flash("error", "Passwords don't match");
+      res.status(400);
+      res.redirect(`/users/${routes.changePassword}`);
+      return;
+    }
+    await req.user.changePassword(oldPassword, newPassword);
+    res.redirect(routes.me);
+  } catch (error) {
+    req.flash("error", "Can't change password");
     res.status(400);
-  } finally {
-    res.end();
+    res.redirect(`/users/${routes.changePassword}`);
   }
 };

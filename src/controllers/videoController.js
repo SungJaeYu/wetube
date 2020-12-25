@@ -14,17 +14,17 @@ export const home = async(req, res) => {
 
 export const search = async(req, res) => {
     const {
-        qurey: { term: searchingBy }
+        qurey: { term: term }
     } = req;
     let videos = [];
     try{
         videos = await Video.find({
-            title: { $regex: searchingBy, $options: "i"}
+            title: { $regex: term, $options: "i"}
         });
     } catch(error){
         console.log(error);
     }
-    res.render("search", { pageTitle: "Search", searchingBy, videos });
+    res.render("search", { pageTitle: "Search", term, videos });
 };
 
 export const getUpload = (req, res) => {
